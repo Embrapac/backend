@@ -1,0 +1,44 @@
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb-container
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: sua_senha_root_segura
+      MARIADB_DATABASE: embrapac
+      MARIADB_USER: agenor
+      MARIADB_PASSWORD: admin123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - mariadb_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  flyway:
+    image: flyway/flyway:latest
+    command: migrate
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:mariadb://mariadb:3306/embrapac
+      FLYWAY_USER: agenor
+      FLYWAY_PASSWORD: admin123
+    networks:
+      - mariadb_network
+
+
+volumes:
+  mariadb_data:
+    driver: local
+
+networks:
+  mariadb_network:
+    driver: bridge
