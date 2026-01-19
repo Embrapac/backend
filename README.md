@@ -5,16 +5,19 @@ O projeto backend será responsável pela interligação da parte visual (fronte
 # Funcionalidades disponíveis
 
 * Banco de dados: MariaDB
+  * Flyway: serviço de versionamento do banco de dados
+* Pub/Sub: Mosquitto
 
 # Utilização
 
-O sistema de backend monta suas integrações externas através do Docker Compose: `docker compose up -d`
+O sistema de backend monta suas integrações externas através do Docker Compose.
+* para inicializar toda infraestrutura: `docker compose up -d`
+* para desligar toda infraestrutura: `docker compose down`
 
-Atualmente temos:
+Exemplo dos sistemas criados:
 
-* Servidor de banco de dados criado
-* Mecanismo de geração de versionamento para os scripts de banco de dados.
+![services running](img/all-services.png)
 
 ---
 
-1 frontend representa as telas que os operadores terão na linha de montagem
+_1 frontend representa as telas que os operadores terão na linha de montagem_
