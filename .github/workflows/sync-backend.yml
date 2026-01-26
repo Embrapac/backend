@@ -23,6 +23,6 @@ jobs:
         env:
           TOKEN: ${{ secrets.RT_EMBARCADOS_TOKEN }}
         run: |
-          git remote add rt-embarcados https://${TOKEN}@github.com/rt-embarcados/grp1_repo.git
+          git remote add rt-embarcados https://manasouza:${TOKEN}@github.com/rt-embarcados/grp1_repo.git
           git fetch rt-embarcados
           git push rt-embarcados main:backend --force-with-lease
