@@ -1,7 +1,7 @@
 services:
   mariadb:
     image: mariadb:latest
-    container_name: mariadb-container
+    container_name: grp1-mariadb
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: sua_senha_root_segura
@@ -9,11 +9,11 @@ services:
       MARIADB_USER: agenor
       MARIADB_PASSWORD: admin123
     ports:
-      - "3306:3306"
+      - "13306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
-    networks:
-      - default_network
+    # networks:
+    #   - default_network
     # healthcheck:
     #   test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
     #   timeout: 20s
@@ -28,6 +28,7 @@ services:
   flyway:
     image: flyway/flyway:latest
     command: migrate
+    container_name: grp1-flyway
     depends_on:
       mariadb:
         condition: service_healthy
@@ -37,27 +38,61 @@ services:
       FLYWAY_URL: jdbc:mariadb://mariadb:3306/embrapac
       FLYWAY_USER: agenor
       FLYWAY_PASSWORD: admin123
-    networks:
-      - default_network
+    # networks:
+    #   - default_network
 
   mosquitto:
     image: eclipse-mosquitto:latest
-    container_name: mosquitto-mqtt
+    container_name: grp1-mosquitto
     restart: unless-stopped
     ports:
-      - "18833:1883"
-      - "9001:9001"
+      - "11883:1883"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
-    networks:
-      - default_network
+    # networks:
+    #   - default_network
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: grp1-influxdb
+    ports:
+      - "18086:8086"
+    environment:
+      - INFLUXDB_DB=iot_data
+      - INFLUXDB_USER=telegraf
+      - INFLUXDB_USER_PASSWORD=telegraf_pass
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+
+  telegraf:
+    image: telegraf:latest
+    container_name: grp1-telegraf
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - influxdb
+      - mosquitto
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grp1-grafana
+    ports:
+      - "13000:3000"
+    depends_on:
+      - influxdb
+    volumes:
+      - grafana_data:/var/lib/grafana
 
 volumes:
+  influxdb_data:
+  grafana_data:
   mariadb_data:
     driver: local
 
-networks:
-  default_network:
-    driver: bridge
+# networks:
+#   default_network:
+#     name: grp01_default_network
+#     driver: bridge
