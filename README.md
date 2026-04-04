@@ -29,13 +29,20 @@ Teste inicial do ambiente realizado no mesmo Raspberry Pi 5: publicação de dad
 
 ![Grafana](img/grafana-poc.png)
 
-Teste realizado local no RPi:
+Teste realizado local no RPi considerando um tópico qualquer:
 
 `mosquitto_pub -h localhost -t "sensor/precision" -m "95"`
 
-Teste realizado a partir de outro dispositivo na mesma rede:
+Teste realizado a partir de outro dispositivo na mesma rede, considerando um tópico qualquer:
 
 `mosquitto_pub -h 192.168.51.10 -t "sensor/precision" -m "95"`
+
+Teste realizado no servidor de monitoria, já executando todos os serviços no Docker, considerando o tópico e dados da aplicação:
+
+```
+docker exec grp1-mosquitto mosquitto_pub -h localhost -t "embrapac/edge/aggregated-metrics" \
+  -m '{"mcu_class":"Media","mcu_timestamp":"2026-03-30 10:26:43","class_match":true,"mcu_ts_in_range":false}'
+```
 
 
 ---
