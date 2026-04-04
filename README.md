@@ -9,8 +9,12 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 * Banco de dados: MariaDB
   * Flyway: serviço de versionamento do banco de dados
 * Pub/Sub: Mosquitto
+* Monitoramento: InfluxDB, Telegraf e Grafana
 
 # Utilização
+
+## Pré-requisitos
+- Docker e Docker Compose instalados
 
 O sistema de backend monta suas integrações externas através do Docker Compose.
 * para inicializar toda infraestrutura: `docker compose up -d`
@@ -23,27 +27,73 @@ Exemplo dos sistemas criados:
 
 # Monitoramento
 
-Criado estrutura no Docker Compose para rodar o **Mosquitto**, **InfluxDB**, **Telegraf** e **Grafana**, para monitoramento dos KPIs do sistema.
+Estrutura no Docker Compose para rodar o **Mosquitto**, **InfluxDB**, **Telegraf** e **Grafana**, para monitoramento dos KPIs do sistema.
+
+
+## Estrutura de arquivos
+```
+.
+├── docker-compose.yml
+├── mosquitto/
+│   ├── config/
+│   │   └── mosquitto.conf        ← Obrigatório existir antes do `up`
+│   ├── data/                     ← Gerado pelo broker
+│   └── log/                      ← Logs do mosquitto
+├── telegraf/
+│   └── telegraf.conf             ← Configuração do pipeline MQTT→InfluxDB
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/
+    │   │   └── influxdb.yaml     ← Datasource InfluxDB pré-configurado
+    │   └── dashboards/
+    │       └── embrapac.yaml     ← Apontamento para a pasta de dashboards
+    └── dashboards/
+        └── embrapac-kpis.json    ← Dashboard com os KPIs da aplicação
+```
+
+## Teste via MQTT num tópico de exemplo
 
 Teste inicial do ambiente realizado no mesmo Raspberry Pi 5: publicação de dados no mosquitto para exibição no _dashboard_ do Grafana:
 
 ![Grafana](img/grafana-poc.png)
 
-Teste realizado local no RPi considerando um tópico qualquer:
-
-`mosquitto_pub -h localhost -t "sensor/precision" -m "95"`
-
-Teste realizado a partir de outro dispositivo na mesma rede, considerando um tópico qualquer:
-
-`mosquitto_pub -h 192.168.51.10 -t "sensor/precision" -m "95"`
-
-Teste realizado no servidor de monitoria, já executando todos os serviços no Docker, considerando o tópico e dados da aplicação:
-
-```
-docker exec grp1-mosquitto mosquitto_pub -h localhost -t "embrapac/edge/aggregated-metrics" \
-  -m '{"mcu_class":"Media","mcu_timestamp":"2026-03-30 10:26:43","class_match":true,"mcu_ts_in_range":false}'
+### Amostra positiva (class_match=true + mcu_ts_in_range=true)
+```bash
+mosquitto_pub -h localhost -t "sensores/mcu" \
+  -m '{"mcu_class":"Media","mcu_timestamp":"2026-03-30 10:00:00","class_match":true,"mcu_ts_in_range":true}'
 ```
 
+### Amostra negativa
+```bash
+mosquitto_pub -h localhost -t "sensores/mcu" \
+  -m '{"mcu_class":"Media","mcu_timestamp":"2026-03-30 10:00:01","class_match":true,"mcu_ts_in_range":false}'
+```
+
+---
+
+## Payload esperado
+```json
+{
+  "mcu_class": "Media",
+  "mcu_timestamp": "2026-03-30 10:26:42.799000",
+  "class_match": true,
+  "mcu_ts_in_range": false
+}
+```
+
+**Regra:** `positive_sample = 1` somente quando **ambos** `class_match` e `mcu_ts_in_range` forem `true`.
+
+O Gauge exibe: `mean(positive_sample) * 100` = percentual de amostras positivas.
+
+## Acesso ao Grafana
+
+Do servidor de backend disponibilizado
+
+- URL: http://10.7.202.10:13000
+- Usuário: `admin`
+- Senha: verificar nos ![secrets da organização](https://github.com/organizations/Embrapac/settings/secrets/codespaces)
+
+O banco de dados InfluxDB e o _dashboard_ **Embrapac KPIs** já estarão pré-carregados automaticamente.
 
 ---
 

@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    database: iot_data
+    user: telegraf
+    secureJsonData:
+      password: telegraf_pass
+    jsonData:
+      httpMode: GET
+      keepCookies: []
+    isDefault: true
+    editable: true
