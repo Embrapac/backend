@@ -1,3 +1,2 @@
-mosquito/data/mosquito.db
-mosquito/log/mosquito.log
-
+mosquitto/data/mosquitto.db
+mosquitto/log/mosquitto.log

@@ -9,6 +9,7 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 * Banco de dados: MariaDB
   * Flyway: serviço de versionamento do banco de dados
 * Pub/Sub: Mosquitto
+* Ingestao MQTT para banco: serviço Node.js mqtt-ingestor
 * Monitoramento: InfluxDB, Telegraf e Grafana
 
 # Utilização
@@ -19,6 +20,21 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 O sistema de backend monta suas integrações externas através do Docker Compose.
 * para inicializar toda infraestrutura: `docker compose up -d`
 * para desligar toda infraestrutura: `docker compose down`
+
+### Servico Node.js de ingestao MQTT -> MariaDB
+
+O servico `backend-server` roda no Docker Compose e:
+- escuta tópicos MQTT com dados provenientes do EDGE ou IHM
+- valida campos obrigatorios do JSON
+- persiste nas tabelas de entidade de negócio
+- persiste na tabela `mqtt_ingest_log` como forma de rastreabilidade
+
+Comandos uteis:
+
+```bash
+docker compose up -d --build backend-server
+docker compose logs -f backend-server
+```
 
 Exemplo dos sistemas criados:
 
@@ -80,6 +96,8 @@ mosquitto_pub -h localhost -t "sensores/mcu" \
   "mcu_ts_in_range": false
 }
 ```
+
+Esse payload agora tambem e persistido em MariaDB (tabela `mqtt_ingest_log`) para rastreabilidade e consumo futuro pela API.
 
 **Regra:** `positive_sample = 1` somente quando **ambos** `class_match` e `mcu_ts_in_range` forem `true`.
 
