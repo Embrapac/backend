@@ -14,35 +14,23 @@ const {
   DB_NAME = "embrapac",
 } = process.env;
 
-const REQUIRED_FIELDS = ["mcu_class", "mcu_timestamp", "class_match", "mcu_ts_in_range"];
-
 let dbPool;
 
 const MQTT_TOPICS = [MQTT_TOPIC, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
 
 function parsePayload(buffer) {
   const payload = JSON.parse(buffer.toString("utf8"));
-
-  for (const key of REQUIRED_FIELDS) {
-    if (!(key in payload)) {
-      throw new Error(`Missing required field: ${key}`);
-    }
-  }
-
-  if (typeof payload.class_match !== "boolean") {
-    throw new Error("Field class_match must be boolean");
-  }
-
-  if (typeof payload.mcu_ts_in_range !== "boolean") {
-    throw new Error("Field mcu_ts_in_range must be boolean");
-  }
-
+  // for (const key of REQUIRED_FIELDS) {
+  //   if (!(key in payload)) {
+  //     throw new Error(`Missing required field: ${key}`);
+  //   }
+  // }
   return payload;
 }
 
 function toMysqlDatetime(rawTimestamp) {
   if (typeof rawTimestamp !== "string") {
-    throw new Error("Field mcu_timestamp must be string");
+    throw new Error("Field timestamp must be string");
   }
 
   const normalized = rawTimestamp.trim().replace("T", " ");
@@ -50,37 +38,28 @@ function toMysqlDatetime(rawTimestamp) {
   const date = new Date(datetimeWithoutMicros.replace(" ", "T") + "Z");
 
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Field mcu_timestamp is not a valid datetime");
+    throw new Error("Field is not a valid datetime");
   }
 
   return datetimeWithoutMicros;
 }
 
 async function writeMessage(topic, payload) {
-  const positiveSample = payload.class_match && payload.mcu_ts_in_range ? 1 : 0;
-  const mcuTimestamp = toMysqlDatetime(payload.mcu_timestamp);
+  const timestamp = toMysqlDatetime(payload.timestamp);
 
   await dbPool.execute(
     `
       INSERT INTO mqtt_ingest_log (
         topic,
         payload_json,
-        mcu_class,
-        mcu_timestamp,
-        class_match,
-        mcu_ts_in_range,
-        positive_sample
+        timestamp
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?)
     `,
     [
       topic,
       JSON.stringify(payload),
-      payload.mcu_class,
-      mcuTimestamp,
-      payload.class_match,
-      payload.mcu_ts_in_range,
-      positiveSample,
+      timestamp,
     ],
   );
 }
