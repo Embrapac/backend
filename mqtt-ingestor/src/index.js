@@ -9,8 +9,8 @@ const {
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
   DB_HOST = "mariadb",
   DB_PORT = "3306",
-  DB_USER,
-  DB_PASSWORD,
+  DB_USER = "",
+  DB_PASSWORD = "",
   DB_NAME = "embrapac",
 } = process.env;
 
