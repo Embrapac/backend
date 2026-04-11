@@ -139,11 +139,36 @@ async function start() {
     console.error("MQTT client error", error.message);
   });
 
-  process.on("SIGINT", async () => {
-    console.log("Graceful shutdown requested");
+  let isShuttingDown = false;
+
+  const gracefulShutdown = async (signal) => {
+    if (isShuttingDown) {
+      return;
+    }
+
+    isShuttingDown = true;
+    console.log(`Graceful shutdown requested (${signal})`);
     client.end(true);
-    await dbPool.end();
+
+    if (dbPool) {
+      await dbPool.end();
+    }
+
     process.exit(0);
+  };
+
+  process.on("SIGINT", () => {
+    gracefulShutdown("SIGINT").catch((error) => {
+      console.error("Graceful shutdown failed", error);
+      process.exit(1);
+    });
+  });
+
+  process.on("SIGTERM", () => {
+    gracefulShutdown("SIGTERM").catch((error) => {
+      console.error("Graceful shutdown failed", error);
+      process.exit(1);
+    });
   });
 }
 
