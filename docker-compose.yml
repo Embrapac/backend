@@ -74,8 +74,8 @@ services:
       MQTT_PUB_CBELT_STATUS: embrapac/edge/cbelt/status
       DB_HOST: mariadb
       DB_PORT: 3306
-      DB_USER: ${DB_USER:?set DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      DB_USER: ${DB_USER:?DB_USER environment variable is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD environment variable is required}
       DB_NAME: embrapac
 
   influxdb:
