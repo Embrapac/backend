@@ -21,15 +21,15 @@ O sistema de backend monta suas integrações externas através do Docker Compos
 * para inicializar toda infraestrutura: `docker compose up -d`
 * para desligar toda infraestrutura: `docker compose down`
 
-### Servico Node.js de ingestao MQTT -> MariaDB
+### Serviço Node.js de ingestão MQTT -> MariaDB
 
-O servico `backend-server` roda no Docker Compose e:
+O serviço `backend-server` roda no Docker Compose e:
 - escuta tópicos MQTT com dados provenientes do EDGE ou IHM
-- valida campos obrigatorios do JSON
+- valida campos obrigatórios do JSON
 - persiste nas tabelas de entidade de negócio
 - persiste na tabela `mqtt_ingest_log` como forma de rastreabilidade
 
-Comandos uteis:
+Comandos úteis:
 
 ```bash
 docker compose up -d --build backend-server
