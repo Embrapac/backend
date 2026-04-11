@@ -9,7 +9,7 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 * Banco de dados: MariaDB
   * Flyway: serviço de versionamento do banco de dados
 * Pub/Sub: Mosquitto
-* Ingestao MQTT para banco: serviço Node.js mqtt-ingestor
+* Ingestão MQTT para banco: serviço Node.js mqtt-ingestor
 * Monitoramento: InfluxDB, Telegraf e Grafana
 
 # Utilização
