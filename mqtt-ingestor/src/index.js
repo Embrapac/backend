@@ -9,8 +9,8 @@ const {
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
   DB_HOST = "mariadb",
   DB_PORT = "3306",
-  DB_USER = "agenor",
-  DB_PASSWORD = "admin123",
+  DB_USER,
+  DB_PASSWORD,
   DB_NAME = "embrapac",
 } = process.env;
 
@@ -65,6 +65,10 @@ async function writeMessage(topic, payload) {
 }
 
 async function start() {
+  if (!DB_USER || !DB_PASSWORD) {
+    throw new Error("Missing required database credentials: DB_USER and DB_PASSWORD");
+  }
+
   dbPool = mysql.createPool({
     host: DB_HOST,
     port: Number(DB_PORT),
