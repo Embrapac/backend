@@ -5,6 +5,7 @@ const mysql = require("mysql2/promise");
 const {
   MQTT_BROKER_URL = "mqtt://mosquitto:1883",
   MQTT_CLIENT_ID = "grp1-mqtt-backend-server",
+  MQTT_PUB_CBELT_STATUS = "embrapac/edge/cbelt/status",
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
   DB_HOST = "mariadb",
@@ -16,7 +17,7 @@ const {
 
 let dbPool;
 
-const MQTT_TOPICS = [MQTT_TOPIC, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
+const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
 
 function parsePayload(buffer) {
   const payload = JSON.parse(buffer.toString("utf8"));
