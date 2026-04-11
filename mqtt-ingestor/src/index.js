@@ -66,7 +66,7 @@ async function writeMessage(topic, payload) {
 
 async function start() {
   if (!DB_USER || !DB_PASSWORD) {
-    throw new Error("Missing required database credentials: DB_USER and DB_PASSWORD");
+    throw new Error("Missing required database credentials (DB_USER, DB_PASSWORD)");
   }
 
   dbPool = mysql.createPool({
