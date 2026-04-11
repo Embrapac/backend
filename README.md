@@ -28,6 +28,7 @@ O serviço `backend-server` roda no Docker Compose e:
 - valida campos obrigatórios do JSON
 - persiste nas tabelas de entidade de negócio
 - persiste na tabela `mqtt_ingest_log` como forma de rastreabilidade
+- exige `DB_USER` e `DB_PASSWORD` via variáveis de ambiente
 
 Comandos úteis:
 
