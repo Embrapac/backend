@@ -65,8 +65,14 @@ async function writeMessage(topic, payload) {
 }
 
 async function start() {
-  if (!DB_USER || !DB_PASSWORD) {
-    throw new Error("Missing required environment variables for database credentials (DB_USER, DB_PASSWORD)");
+  const missingDbCredentials = [];
+  if (!DB_USER) missingDbCredentials.push("DB_USER");
+  if (!DB_PASSWORD) missingDbCredentials.push("DB_PASSWORD");
+
+  if (missingDbCredentials.length > 0) {
+    throw new Error(
+      `Missing required environment variables for database credentials: ${missingDbCredentials.join(", ")}`,
+    );
   }
 
   dbPool = mysql.createPool({
