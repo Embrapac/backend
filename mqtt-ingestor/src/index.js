@@ -59,7 +59,7 @@ function parsePayload(buffer) {
 
 function toMysqlDatetime(rawTimestamp) {
   if (typeof rawTimestamp !== "string") {
-    throw new Error("Field timestamp must be string");
+    throw new Error("Field mcu_timestamp (or timestamp) must be string");
   }
 
   const normalized = rawTimestamp.trim().replace("T", " ");
@@ -74,21 +74,21 @@ function toMysqlDatetime(rawTimestamp) {
 }
 
 async function writeMessage(topic, payload) {
-  const timestamp = toMysqlDatetime(payload.timestamp);
+  const mcuTimestamp = toMysqlDatetime(payload.mcu_timestamp ?? payload.timestamp);
 
   await dbPool.execute(
     `
       INSERT INTO mqtt_ingest_log (
         topic,
         payload_json,
-        timestamp
+        mcu_timestamp
       )
       VALUES (?, ?, ?)
     `,
     [
       topic,
       JSON.stringify(payload),
-      timestamp,
+      mcuTimestamp,
     ],
   );
 }
