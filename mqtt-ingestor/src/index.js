@@ -75,7 +75,7 @@ function toMysqlDatetime(rawTimestamp) {
 
 async function writeMessage(topic, payload) {
   const rawMcuTimestamp = payload.mcu_timestamp ?? payload.timestamp;
-  if (rawMcuTimestamp == null) {
+  if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
     throw new Error("Missing required field: mcu_timestamp (or timestamp)");
   }
 
