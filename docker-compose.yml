@@ -67,6 +67,7 @@ services:
       mosquitto:
         condition: service_started
     environment:
+      EXECUTION_MODE: compose
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       MQTT_CLIENT_ID: grp1-mqtt-backend-server
       MQTT_SUB_COUNT: embrapac/edge/count

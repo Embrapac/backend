@@ -2,14 +2,20 @@ require("dotenv").config();
 const mqtt = require("mqtt");
 const mysql = require("mysql2/promise");
 
+const EXECUTION_MODES = {
+  COMPOSE: "compose",
+  STANDALONE: "standalone",
+};
+
 const {
-  MQTT_BROKER_URL = "mqtt://mosquitto:1883",
+  EXECUTION_MODE = EXECUTION_MODES.COMPOSE,
+  MQTT_BROKER_URL,
   MQTT_CLIENT_ID = "grp1-mqtt-backend-server",
   MQTT_PUB_CBELT_STATUS = "embrapac/edge/cbelt/status",
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
-  DB_HOST = "mariadb",
-  DB_PORT = "3306",
+  DB_HOST,
+  DB_PORT,
   DB_USER = "",
   DB_PASSWORD = "",
   DB_NAME = "embrapac",
@@ -18,6 +24,28 @@ const {
 let dbPool;
 
 const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
+
+function resolveRuntimeConfig(mode) {
+  if (!Object.values(EXECUTION_MODES).includes(mode)) {
+    throw new Error(
+      `Invalid EXECUTION_MODE: ${mode}. Expected one of: ${Object.values(EXECUTION_MODES).join(", ")}`,
+    );
+  }
+
+  if (mode === EXECUTION_MODES.STANDALONE) {
+    return {
+      dbHost: DB_HOST || "host.docker.internal",
+      dbPort: Number(DB_PORT || "13306"),
+      mqttBrokerUrl: MQTT_BROKER_URL || "mqtt://host.docker.internal:11883",
+    };
+  }
+
+  return {
+    dbHost: DB_HOST || "mariadb",
+    dbPort: Number(DB_PORT || "3306"),
+    mqttBrokerUrl: MQTT_BROKER_URL || "mqtt://mosquitto:1883",
+  };
+}
 
 function parsePayload(buffer) {
   const payload = JSON.parse(buffer.toString("utf8"));
@@ -76,9 +104,22 @@ async function start() {
     );
   }
 
+  const runtimeConfig = resolveRuntimeConfig(EXECUTION_MODE);
+
+  if (!Number.isInteger(runtimeConfig.dbPort) || runtimeConfig.dbPort <= 0) {
+    throw new Error(`Invalid DB_PORT: ${DB_PORT || "(empty)"}`);
+  }
+
+  console.log("Runtime configuration", {
+    executionMode: EXECUTION_MODE,
+    dbHost: runtimeConfig.dbHost,
+    dbPort: runtimeConfig.dbPort,
+    mqttBrokerUrl: runtimeConfig.mqttBrokerUrl,
+  });
+
   dbPool = mysql.createPool({
-    host: DB_HOST,
-    port: Number(DB_PORT),
+    host: runtimeConfig.dbHost,
+    port: runtimeConfig.dbPort,
     user: DB_USER,
     password: DB_PASSWORD,
     database: DB_NAME,
@@ -90,13 +131,13 @@ async function start() {
   await dbPool.query("SELECT 1");
   console.log("Connected to MariaDB");
 
-  const client = mqtt.connect(MQTT_BROKER_URL, {
+  const client = mqtt.connect(runtimeConfig.mqttBrokerUrl, {
     clientId: MQTT_CLIENT_ID,
     reconnectPeriod: 2000,
   });
 
   client.on("connect", () => {
-    console.log(`Connected to MQTT broker at ${MQTT_BROKER_URL}`);
+    console.log(`Connected to MQTT broker at ${runtimeConfig.mqttBrokerUrl}`);
     if (MQTT_TOPICS.length === 0) {
       console.error("No MQTT topic configured. Set MQTT_TOPIC or MQTT_SUB_* env vars.");
       return;

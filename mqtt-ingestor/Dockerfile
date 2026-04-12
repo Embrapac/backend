@@ -7,4 +7,6 @@ RUN npm install --omit=dev
 
 COPY src ./src
 
+ENV EXECUTION_MODE=standalone
+
 CMD ["npm", "start"]
