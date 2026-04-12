@@ -1,0 +1,15 @@
+{
+  "name": "embrapac-backend-db-ingestor",
+  "version": "1.0.0",
+  "description": "MQTT JSON to Database (MariaDB) ingestion service",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.10.1",
+    "mysql2": "^3.11.3"
+  }
+}
