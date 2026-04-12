@@ -9,6 +9,7 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 * Banco de dados: MariaDB
   * Flyway: serviço de versionamento do banco de dados
 * Pub/Sub: Mosquitto
+* Ingestão MQTT para banco: serviço Node.js mqtt-ingestor
 * Monitoramento: InfluxDB, Telegraf e Grafana
 
 # Utilização
@@ -19,6 +20,63 @@ Além do mais será responsável por orquestrar a infraestrutura de monitorament
 O sistema de backend monta suas integrações externas através do Docker Compose.
 * para inicializar toda infraestrutura: `docker compose up -d`
 * para desligar toda infraestrutura: `docker compose down`
+
+### Serviço Node.js de ingestão MQTT -> MariaDB
+
+O serviço `backend-server` roda no Docker Compose e:
+- escuta tópicos MQTT com dados provenientes do EDGE ou IHM
+- valida campos obrigatórios do JSON
+- persiste nas tabelas de entidade de negócio
+- persiste na tabela `mqtt_ingest_log` como forma de rastreabilidade
+- exige `DB_USER` e `DB_PASSWORD` via variáveis de ambiente
+
+### Modos de execução do mqtt-ingestor
+
+O serviço suporta dois modos por meio da variável `EXECUTION_MODE`:
+
+- `compose` (padrão no Docker Compose): usa nomes de serviço internos da rede Docker
+  - `DB_HOST=mariadb`
+  - `DB_PORT=3306`
+  - `MQTT_BROKER_URL=mqtt://mosquitto:1883`
+- `standalone` (padrão no Dockerfile): pensado para `docker build` + `docker run`
+  - `DB_HOST=host.docker.internal`
+  - `DB_PORT=13306`
+  - `MQTT_BROKER_URL=mqtt://host.docker.internal:11883`
+
+Observações:
+
+- `DB_HOST` aceita hostname ou endereço IP, por exemplo `mariadb`, `192.168.1.20`, `10.0.0.15`.
+- `DB_USER` e `DB_PASSWORD` continuam obrigatórios.
+- As variáveis podem sobrescrever os defaults de qualquer modo.
+
+Exemplo de execução standalone com IPs explícitos:
+
+```bash
+docker build -t embrapac-mqtt-ingestor ./mqtt-ingestor
+
+docker run --rm \
+  -e EXECUTION_MODE=standalone \
+  -e DB_HOST=192.168.1.50 \
+  -e DB_PORT=3306 \
+  -e DB_USER=agenor \
+  -e DB_PASSWORD=admin123 \
+  -e DB_NAME=embrapac \
+  -e MQTT_BROKER_URL=mqtt://192.168.1.60:1883 \
+  embrapac-backend
+```
+
+Para Linux, se precisar alcançar serviços do host com `host.docker.internal`, execute com:
+
+```bash
+--add-host=host.docker.internal:host-gateway
+```
+
+Comandos úteis:
+
+```bash
+docker compose up -d --build backend-server
+docker compose logs -f backend-server
+```
 
 Exemplo dos sistemas criados:
 
@@ -80,6 +138,8 @@ mosquitto_pub -h localhost -t "sensores/mcu" \
   "mcu_ts_in_range": false
 }
 ```
+
+Esse payload agora tambem e persistido em MariaDB (tabela `mqtt_ingest_log`) para rastreabilidade e consumo futuro pela API.
 
 **Regra:** `positive_sample = 1` somente quando **ambos** `class_match` e `mcu_ts_in_range` forem `true`.
 

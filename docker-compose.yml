@@ -54,6 +54,31 @@ services:
     # networks:
     #   - default_network
 
+  backend-server:
+    build:
+      context: ./mqtt-ingestor
+    container_name: grp1-mqtt-ingestor
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      mosquitto:
+        condition: service_started
+    environment:
+      EXECUTION_MODE: compose
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_CLIENT_ID: grp1-mqtt-backend-server
+      MQTT_SUB_COUNT: embrapac/edge/count
+      MQTT_SUB_CBELT: embrapac/edge/cbelt
+      MQTT_PUB_CBELT_STATUS: embrapac/edge/cbelt/status
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:?DB_USER environment variable is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD environment variable is required}
+      DB_NAME: embrapac
+
   influxdb:
     image: influxdb:1.8
     container_name: grp1-influxdb
@@ -83,8 +108,14 @@ services:
       - "13000:3000"
     depends_on:
       - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
 
 volumes:
   influxdb_data:

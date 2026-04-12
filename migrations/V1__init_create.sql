@@ -1,6 +1,6 @@
 -- tabela profissionais
 CREATE TABLE IF NOT EXISTS worker (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     login VARCHAR(20) NOT NULL UNIQUE,
     passwd VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS worker (
 
 -- tabela esteiras
 CREATE TABLE IF NOT EXISTS conveyor (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     state ENUM('IN_PROGRESS', 'ON_HOLD', 'ON_FAILURE') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS conveyor (
 
 -- tabela turnos
 CREATE TABLE IF NOT EXISTS work_shift (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
     total_count INT NOT NULL DEFAULT 0,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS work_shift (
     medium_count INT NOT NULL DEFAULT 0,
     large_count INT NOT NULL DEFAULT 0,
     stoppage_count INT NOT NULL DEFAULT 0,
-    conveyor_id INT NOT NULL,
+    conveyor_id BIGINT NOT NULL,
     FOREIGN KEY (conveyor_id) REFERENCES conveyor(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -38,7 +38,7 @@ CREATE INDEX idx_conveyor_id ON work_shift(conveyor_id);
 
 -- tabela eventos
 CREATE TABLE event (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     occurrence_time DATETIME NOT NULL,
     description VARCHAR(255) NOT NULL,
     code INT NOT NULL,
@@ -54,9 +54,9 @@ CREATE INDEX idx_severity ON event(severity);
 
 -- tabela assoc turno-profissionais
 CREATE TABLE work_shift_worker (
-    id INT NOT NULL,
-    worker_id INT NOT NULL,
-    work_shift_id INT NOT NULL,
+    id BIGINT NOT NULL,
+    worker_id BIGINT NOT NULL,
+    work_shift_id BIGINT NOT NULL,
     PRIMARY KEY (work_shift_id, worker_id),
     CONSTRAINT fk_work_shift_worker_work_shift FOREIGN KEY (work_shift_id)
         REFERENCES work_shift(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -68,9 +68,9 @@ CREATE INDEX idx_work_shift_worker_work_shift_id ON work_shift_worker(work_shift
 
 -- tabela assoc turno-eventos
 CREATE TABLE work_shift_event (
-    id INT NOT NULL,
-    event_id INT NOT NULL,
-    work_shift_id INT NOT NULL,
+    id BIGINT NOT NULL,
+    event_id BIGINT NOT NULL,
+    work_shift_id BIGINT NOT NULL,
     PRIMARY KEY (work_shift_id, event_id),
     CONSTRAINT fk_work_shift_event_work_shift FOREIGN KEY (work_shift_id)
         REFERENCES work_shift(id) ON DELETE CASCADE ON UPDATE CASCADE,
