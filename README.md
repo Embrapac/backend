@@ -24,11 +24,11 @@ O sistema de backend monta suas integrações externas através do Docker Compos
 ### Serviço Node.js de ingestão MQTT -> MariaDB
 
 O serviço `backend-server` roda no Docker Compose e:
+- **exige `DB_USER` e `DB_PASSWORD` via variáveis de ambiente**
 - escuta tópicos MQTT com dados provenientes do EDGE ou IHM
 - valida campos obrigatórios do JSON
 - persiste nas tabelas de entidade de negócio
 - persiste na tabela `mqtt_ingest_log` como forma de rastreabilidade
-- exige `DB_USER` e `DB_PASSWORD` via variáveis de ambiente
 
 ### Modos de execução do mqtt-ingestor
 

@@ -11,3 +11,4 @@ Follow these backend standards:
 - Use parameterized SQL queries only.
 - Do not hardcode hostnames or credentials outside fallback defaults.
 - Preserve Docker-first execution (service must run in compose).
+- Log key events and errors with structured context for observability.
