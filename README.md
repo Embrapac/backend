@@ -21,6 +21,24 @@ O sistema de backend monta suas integrações externas através do Docker Compos
 * para inicializar toda infraestrutura: `docker compose up -d`
 * para desligar toda infraestrutura: `docker compose down`
 
+## Configuração do Banco de Dados
+
+O usuário `agenor` é criado automaticamente pelas migrações Flyway:
+- Acesso remoto: `agenor@%` (para serviços Docker)
+- Acesso local: `agenor@localhost` (para CLI dentro do container)
+
+Para conectar ao banco e executar comandos SQL:
+
+```bash
+docker compose exec mariadb mariadb -u agenor -p --host=127.0.0.1 --port=3306
+```
+
+Ou para conectar como root:
+
+```bash
+docker compose exec mariadb mariadb -u root -p --host=127.0.0.1 --port=3306
+```
+
 ### Serviço Node.js de ingestão MQTT -> MariaDB
 
 O serviço `backend-server` roda no Docker Compose e:
