@@ -12,6 +12,7 @@ services:
       - "13306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./init-users.sql:/docker-entrypoint-initdb.d/init-users.sql:ro
     # networks:
     #   - default_network
     # healthcheck:

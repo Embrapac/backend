@@ -23,9 +23,9 @@ O sistema de backend monta suas integrações externas através do Docker Compos
 
 ## Configuração do Banco de Dados
 
-O usuário `agenor` é criado automaticamente pelas migrações Flyway:
-- Acesso remoto: `agenor@%` (para serviços Docker)
-- Acesso local: `agenor@localhost` (para CLI dentro do container)
+O usuário `agenor` é criado automaticamente na inicialização do MariaDB:
+- Acesso remoto: `agenor@%` (para serviços Docker) - criado pelas variáveis de ambiente do MariaDB
+- Acesso local: `agenor@localhost` (para CLI dentro do container) - criado pelo script `init-users.sql`
 
 Para conectar ao banco e executar comandos SQL:
 
@@ -109,22 +109,26 @@ Estrutura no Docker Compose para rodar o **Mosquitto**, **InfluxDB**, **Telegraf
 ## Estrutura de arquivos
 ```
 .
-├── docker-compose.yml
+├── docker-compose.yml             ← Configuração dos serviços Docker
+├── init-users.sql                 ← Script SQL para criar usuários adicionais no MariaDB
+├── migrations/                    ← Migrations Flyway para MariaDB
+├── mqtt-ingestor/                 ← Serviço Node.js de ingestão MQTT→MariaDB
+├── grafana/
+│   ├── provisioning/
+│   │   ├── datasources/
+│   │   │   └── influxdb.yaml      ← Datasource InfluxDB pré-configurado
+│   │   └── dashboards/
+│   │       └── embrapac.yaml      ← Apontamento para a pasta de dashboards
+│   └── dashboards/
+│       └── embrapac-kpis.json    ← Dashboard com os KPIs da aplicação
 ├── mosquitto/
 │   ├── config/
-│   │   └── mosquitto.conf        ← Obrigatório existir antes do `up`
-│   ├── data/                     ← Gerado pelo broker
-│   └── log/                      ← Logs do mosquitto
+│   │   └── mosquitto.conf         ← Obrigatório existir antes do `up`
+│   ├── data/                      ← Gerado pelo broker
+│   └── log/                       ← Logs do mosquitto
 ├── telegraf/
-│   └── telegraf.conf             ← Configuração do pipeline MQTT→InfluxDB
-└── grafana/
-    ├── provisioning/
-    │   ├── datasources/
-    │   │   └── influxdb.yaml     ← Datasource InfluxDB pré-configurado
-    │   └── dashboards/
-    │       └── embrapac.yaml     ← Apontamento para a pasta de dashboards
-    └── dashboards/
-        └── embrapac-kpis.json    ← Dashboard com os KPIs da aplicação
+│   └── telegraf.conf              ← Configuração do pipeline MQTT→InfluxDB
+└── img/                           ← Imagens usadas no README e documentação
 ```
 
 ## Teste via MQTT num tópico de exemplo
