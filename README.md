@@ -21,6 +21,24 @@ O sistema de backend monta suas integrações externas através do Docker Compos
 * para inicializar toda infraestrutura: `docker compose up -d`
 * para desligar toda infraestrutura: `docker compose down`
 
+## Configuração do Banco de Dados
+
+O usuário `agenor` é criado automaticamente na inicialização do MariaDB:
+- Acesso remoto: `agenor@%` (para serviços Docker) - criado pelas variáveis de ambiente do MariaDB
+- Acesso local: `agenor@localhost` (para CLI dentro do container) - criado pelo script `init-users.sql`
+
+Para conectar ao banco e executar comandos SQL:
+
+```bash
+docker compose exec mariadb mariadb -u agenor -p --host=127.0.0.1 --port=3306
+```
+
+Ou para conectar como root:
+
+```bash
+docker compose exec mariadb mariadb -u root -p --host=127.0.0.1 --port=3306
+```
+
 ### Serviço Node.js de ingestão MQTT -> MariaDB
 
 O serviço `backend-server` roda no Docker Compose e:
@@ -96,6 +114,7 @@ Estrutura no Docker Compose para rodar o **Mosquitto**, **InfluxDB**, **Telegraf
 ```
 .
 ├── docker-compose.yml             ← Configuração dos serviços Docker
+├── init-users.sql                 ← Script SQL para criar usuários adicionais no MariaDB
 ├── migrations/                    ← Migrations Flyway para MariaDB
 ├── mqtt-ingestor/                 ← Serviço Node.js de ingestão MQTT→MariaDB
 ├── grafana/
