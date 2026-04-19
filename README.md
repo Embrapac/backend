@@ -100,6 +100,10 @@ Exemplo dos sistemas criados:
 
 ![services running](img/all-services.png)
 
+# Servidor Backend Node.js
+
+Servidor Node.js responsável por consumir mensagens MQTT, validar e persistir em MariaDB, além de expor APIs REST para consumo do frontend e outros sistemas.
+
 
 # Monitoramento
 
@@ -151,7 +155,7 @@ mosquitto_pub -h localhost -t "sensores/mcu" \
 
 ---
 
-## Payload esperado
+## Payload esperado para definição da métrica de precisão de detecção
 ```json
 {
   "mcu_class": "Media",
@@ -166,6 +170,7 @@ Esse payload agora tambem e persistido em MariaDB (tabela `mqtt_ingest_log`) par
 **Regra:** `positive_sample = 1` somente quando **ambos** `class_match` e `mcu_ts_in_range` forem `true`.
 
 O Gauge exibe: `mean(positive_sample) * 100` = percentual de amostras positivas.
+
 
 ## Acesso ao Grafana
 
