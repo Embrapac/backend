@@ -14,6 +14,7 @@ const {
   MQTT_PUB_CBELT_STATUS = "embrapac/edge/cbelt/status",
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
+  MQTT_SUB_METRICS = "embrapac/edge/aggregated-metrics",
   DB_HOST,
   DB_PORT,
   DB_USER = "",
@@ -23,7 +24,7 @@ const {
 
 let dbPool;
 
-const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
+const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT, MQTT_SUB_METRICS].filter(Boolean);
 
 function resolveRuntimeConfig(mode) {
   if (!Object.values(EXECUTION_MODES).includes(mode)) {
@@ -233,7 +234,7 @@ async function start() {
   client.on("message", async (topic, message) => {
     try {
       const payload = parsePayload(message);
-      // console.log(`Persisted message from topic ${topic}`);
+      console.log(`Received message from topic ${topic}`);
       if (topic === MQTT_SUB_CBELT) {
         console.log("Received CBELT status message from EDGE", payload);
       } else if (topic === MQTT_SUB_COUNT) {
