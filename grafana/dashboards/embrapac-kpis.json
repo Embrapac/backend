@@ -291,12 +291,28 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "orange",
+                "value": 90
+              },
+              {
+                "color": "#EAB839",
+                "value": 95
+              },
+              {
+                "color": "green",
+                "value": 98
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 99
+              },
+              {
+                "color": "dark-green",
+                "value": 99.8
               }
             ]
           },
@@ -354,15 +370,15 @@
           },
           "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "green",
+                "value": 90
               }
             ]
           }
@@ -427,7 +443,7 @@
               },
               {
                 "color": "green",
-                "value": 80
+                "value": 90
               }
             ]
           }
@@ -438,6 +454,71 @@
         "h": 7,
         "w": 5,
         "x": 10,
+        "y": 4
+      },
+      "id": 8,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "query": "SELECT mean(\"positive_sample\") * 100 FROM \"mcu_samples\" WHERE $timeFilter AND \"mcu_class\" = 'Media'",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Precisão de Detecção: Caixa Média",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 15,
         "y": 4
       },
       "id": 7,
@@ -492,6 +573,6 @@
   "timezone": "browser",
   "title": "Embrapac KPIs",
   "uid": "embrapac-kpis-v1",
-  "version": 8,
+  "version": 11,
   "weekStart": ""
 }
