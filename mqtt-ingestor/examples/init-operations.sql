@@ -4,8 +4,10 @@
 
 INSERT INTO conveyorbelt (state) VALUES ('IN_PROGRESS');
 
+SET @workshift_start = CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '-03:00');
+
 INSERT INTO workshift (start_time, end_time, conveyorbelt_id)
-SELECT NOW(), DATE_ADD(NOW(), INTERVAL 4 HOUR), cb.id FROM conveyorbelt cb
+SELECT @workshift_start, DATE_ADD(@workshift_start, INTERVAL 4 HOUR), cb.id FROM conveyorbelt cb
 WHERE cb.state = 'IN_PROGRESS'
 ORDER BY cb.id DESC
 LIMIT 1;
