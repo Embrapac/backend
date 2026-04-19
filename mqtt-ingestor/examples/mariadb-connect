@@ -1,0 +1,20 @@
+
+docker compose exec <servico> mariadb -u agenor -p --host=127.0.0.1 --port=3306
+docker compose exec <nome-do-servico> mariadb -u root -p
+
+
+-- Verificar grants atuais do usuário
+SHOW GRANTS FOR 'agenor'@'localhost';
+SHOW GRANTS FOR 'agenor'@'%';
+
+-- Verificar como o usuário foi registrado (host)
+SELECT User, Host FROM mysql.user WHERE User = 'agenor';
+
+-- NOTA: A configuração do usuário 'agenor'@'localhost' com os grants é feita automaticamente
+-- pela migração Flyway V4__create_agenor_localhost_user.sql ao inicializar o banco.
+
+USE embrapac;
+
+SHOW FULL COLUMNS FROM nome_da_tabela;
+
+SHOW TABLES;
