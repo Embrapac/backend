@@ -176,7 +176,7 @@ async function writeConveyorBeltStatus(payload) {
   const rawMcuTimestamp = payload.timestamp;
   // Considera somente 1 registro de esteira. Com escala do sistema isso precisa ser refatorado
   const singletonConveyorBeltId = 1;
-  const statusMapping = {
+  const commandMapping = {
     START: "IN_PROGRESS",
     STOP: "ON_HOLD",
     EMERGENCY: "ON_FAILURE",
@@ -184,38 +184,33 @@ async function writeConveyorBeltStatus(payload) {
   if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
     throw new Error("Missing required field: timestamp");
   }
-  const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
-  const status = String(payload.status ?? "").trim().toUpperCase();
-  const mappedStatus = statusMapping[status];
+  //const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
+  const command = String(payload.command ?? "").trim().toUpperCase();
+  const mappedCommand = commandMapping[command];
 
-  if (!mappedStatus) {
-    throw new Error(`Unsupported conveyor belt status: ${payload.status}`);
+  if (!mappedCommand) {
+    throw new Error(`Unsupported conveyor belt status: ${payload.command}`);
   }
 
   await dbPool.execute(
     `
       INSERT INTO conveyorbelt (
         id,
-        state,
-        created_at,
-        updated_at
+        state
       )
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?)
       ON DUPLICATE KEY UPDATE
-        state = VALUES(state),
-        updated_at = VALUES(updated_at)
+        state = VALUES(state)
     `,
     [
       singletonConveyorBeltId,
-      mappedStatus,
-      mcuTimestamp,
-      mcuTimestamp,
+      mappedCommand,
     ],
   );
   console.log("Persisted conveyor belt status record", {
     singletonConveyorBeltId,
-    status,
-    persistedState: mappedStatus,
+    command,
+    persistedState: mappedCommand,
     mcuTimestamp,
   });
 }
