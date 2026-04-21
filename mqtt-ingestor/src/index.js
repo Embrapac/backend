@@ -211,7 +211,7 @@ async function writeConveyorBeltStatus(payload) {
     singletonConveyorBeltId,
     command,
     persistedState: mappedCommand,
-    mcuTimestamp,
+    rawMcuTimestamp,
   });
 }
 
