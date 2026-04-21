@@ -73,6 +73,7 @@ services:
       MQTT_CLIENT_ID: grp1-mqtt-backend-server
       MQTT_SUB_COUNT: embrapac/edge/count
       MQTT_SUB_CBELT: embrapac/edge/cbelt
+      MQTT_SUB_METRICS: embrapac/edge/aggregated-metrics
       MQTT_PUB_CBELT_STATUS: embrapac/edge/cbelt/status
       DB_HOST: mariadb
       DB_PORT: 3306

@@ -14,6 +14,7 @@ const {
   MQTT_PUB_CBELT_STATUS = "embrapac/edge/cbelt/status",
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
+  MQTT_SUB_METRICS = "embrapac/edge/aggregated-metrics",
   DB_HOST,
   DB_PORT,
   DB_USER = "",
@@ -23,7 +24,7 @@ const {
 
 let dbPool;
 
-const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT].filter(Boolean);
+const MQTT_TOPICS = [MQTT_PUB_CBELT_STATUS, MQTT_SUB_COUNT, MQTT_SUB_CBELT, MQTT_SUB_METRICS].filter(Boolean);
 
 function resolveRuntimeConfig(mode) {
   if (!Object.values(EXECUTION_MODES).includes(mode)) {
@@ -73,7 +74,7 @@ function toMysqlDatetime(rawTimestamp) {
   return datetimeWithoutMicros;
 }
 
-async function writeMessage(topic, payload) {
+async function writeMqttIngestLog(topic, payload) {
   const rawMcuTimestamp = payload.mcu_timestamp ?? payload.timestamp;
   if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
     throw new Error("Missing required field: mcu_timestamp (or timestamp)");
@@ -97,6 +98,79 @@ async function writeMessage(topic, payload) {
     ],
   );
 }
+
+async function writeCountRecord(payload) {
+  const rawMcuClass = payload.mcu_class ?? payload.detected_class;
+  const rawMcuTimestamp = payload.mcu_timestamp ?? payload.timestamp;
+
+  if (!rawMcuClass) {
+    throw new Error("Missing required field: mcu_class (or detected_class)");
+  }
+
+  if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
+    throw new Error("Missing required field: mcu_timestamp (or timestamp)");
+  }
+
+  const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
+  const normalizedClass = String(rawMcuClass).trim().toLowerCase();
+
+  let countColumn = null;
+  if (normalizedClass === "pequena") {
+    countColumn = "small_count";
+  } else if (normalizedClass === "media" || normalizedClass === "média") {
+    countColumn = "medium_count";
+  } else if (normalizedClass === "grande") {
+    countColumn = "large_count";
+  }
+
+  const [workshiftRows] = await dbPool.execute(
+    `
+      SELECT id, start_time, end_time
+      FROM workshift
+      WHERE ? BETWEEN start_time AND end_time
+      ORDER BY start_time DESC
+      LIMIT 1
+    `,
+    [mcuTimestamp],
+  );
+
+  if (workshiftRows.length === 0) {
+    console.error("Count record not persisted because no workshift exists for MCU timestamp", {
+      mcuClass: rawMcuClass,
+      mcuTimestamp,
+    });
+    return;
+  }
+
+  const workshift = workshiftRows[0];
+  const updateClauses = ["total_count = total_count + 1"];
+  if (countColumn) {
+    updateClauses.push(`${countColumn} = ${countColumn} + 1`);
+  } else {
+    console.warn("Received count record with unknown class. Only total_count will be incremented.", {
+      mcuClass: rawMcuClass,
+      mcuTimestamp,
+      workshiftId: workshift.id,
+    });
+  }
+
+  await dbPool.execute(
+    `
+      UPDATE workshift
+      SET ${updateClauses.join(", ")}
+      WHERE id = ?
+    `,
+    [workshift.id],
+  );
+
+  console.log("Persisted count record in workshift", {
+    workshiftId: workshift.id,
+    mcuClass: rawMcuClass,
+    mcuTimestamp,
+    updatedColumns: ["total_count", countColumn].filter(Boolean),
+  });
+}
+
 
 async function start() {
   const missingDbCredentials = [];
@@ -160,8 +234,18 @@ async function start() {
   client.on("message", async (topic, message) => {
     try {
       const payload = parsePayload(message);
-      await writeMessage(topic, payload);
-      console.log(`Persisted message from topic ${topic}`);
+      console.log(`Received message from topic ${topic}`);
+      if (topic === MQTT_SUB_CBELT) {
+        console.log("Received CBELT status message from EDGE", payload);
+      } else if (topic === MQTT_SUB_COUNT) {
+        console.log("Received count message from EDGE", payload);
+        await writeCountRecord(payload);
+      } else if (topic === MQTT_PUB_CBELT_STATUS) {
+        console.log("Received CBELT status update from IHM", payload);
+      } else {
+        console.log(`Received message from topic ${topic}, storing in database...`);
+        await writeMqttIngestLog(topic, payload);
+      }
     } catch (error) {
       console.error("Failed to process MQTT message", {
         topic,
