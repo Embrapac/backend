@@ -171,6 +171,52 @@ async function writeCountRecord(payload) {
   });
 }
 
+async function writeConveyorBeltStatus(payload) {
+  const rawMcuTimestamp = payload.timestamp;
+  // Considera somente 1 registro de esteira. Com escala do sistema isso precisa ser refatorado
+  const singletonConveyorBeltId = 1;
+  const statusMapping = {
+    START: "IN_PROGRESS",
+    STOP: "ON_HOLD",
+    EMERGENCY: "ON_FAILURE",
+  }
+  if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
+    throw new Error("Missing required field: timestamp");
+  }
+  const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
+  const status = String(payload.status ?? "").trim().toUpperCase();
+  const mappedStatus = statusMapping[status] ?? "UNKNOWN";
+
+  if (!statusMapping[status]) {
+    console.warn("Received conveyor belt status update with unknown status. Record will be persisted with status 'UNKNOWN'.", {
+      rawStatus: payload.status,
+      mcuTimestamp,
+    });
+  }
+  
+  await dbPool.execute(
+    `
+      INSERT INTO conveyorbelt (
+        id,
+        state
+      )
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        state = VALUES(state),
+        updated_at = CURRENT_TIMESTAMP
+    `,
+    [
+      singletonConveyorBeltId,
+      mappedStatus,
+    ],
+  );
+  console.log("Persisted conveyor belt status record", {
+    singletonConveyorBeltId,
+    status,
+    persistedState: mappedStatus,
+    mcuTimestamp,
+  });
+}
 
 async function start() {
   const missingDbCredentials = [];
@@ -236,12 +282,13 @@ async function start() {
       const payload = parsePayload(message);
       console.log(`Received message from topic ${topic}`);
       if (topic === MQTT_SUB_CBELT) {
-        console.log("Received CBELT status message from EDGE", payload);
+        console.log("Received CBELT status message from IHM", payload);
+        await writeConveyorBeltStatus(payload);
       } else if (topic === MQTT_SUB_COUNT) {
         console.log("Received count message from EDGE", payload);
         await writeCountRecord(payload);
       } else if (topic === MQTT_PUB_CBELT_STATUS) {
-        console.log("Received CBELT status update from IHM", payload);
+        console.log("Received CBELT status update from EDGE", payload);
       } else {
         console.log(`Received message from topic ${topic}, storing in database...`);
         await writeMqttIngestLog(topic, payload);
