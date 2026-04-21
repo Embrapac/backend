@@ -15,6 +15,7 @@ const {
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
   MQTT_SUB_METRICS = "embrapac/edge/aggregated-metrics",
+  DB_TIME_ZONE = "-03:00",
   DB_HOST,
   DB_PORT,
   DB_USER = "",
@@ -185,29 +186,30 @@ async function writeConveyorBeltStatus(payload) {
   }
   const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
   const status = String(payload.status ?? "").trim().toUpperCase();
-  const mappedStatus = statusMapping[status] ?? "UNKNOWN";
+  const mappedStatus = statusMapping[status];
 
-  if (!statusMapping[status]) {
-    console.warn("Received conveyor belt status update with unknown status. Record will be persisted with status 'UNKNOWN'.", {
-      rawStatus: payload.status,
-      mcuTimestamp,
-    });
+  if (!mappedStatus) {
+    throw new Error(`Unsupported conveyor belt status: ${payload.status}`);
   }
-  
+
   await dbPool.execute(
     `
       INSERT INTO conveyorbelt (
         id,
-        state
+        state,
+        created_at,
+        updated_at
       )
-      VALUES (?, ?)
+      VALUES (?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         state = VALUES(state),
-        updated_at = CURRENT_TIMESTAMP
+        updated_at = VALUES(updated_at)
     `,
     [
       singletonConveyorBeltId,
       mappedStatus,
+      mcuTimestamp,
+      mcuTimestamp,
     ],
   );
   console.log("Persisted conveyor belt status record", {
@@ -254,6 +256,7 @@ async function start() {
   });
 
   await dbPool.query("SELECT 1");
+  await dbPool.execute("SET time_zone = ?", [DB_TIME_ZONE]);
   console.log("Connected to MariaDB");
 
   const client = mqtt.connect(runtimeConfig.mqttBrokerUrl, {
