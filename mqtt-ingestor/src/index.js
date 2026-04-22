@@ -15,6 +15,7 @@ const {
   MQTT_SUB_COUNT = "embrapac/edge/count",
   MQTT_SUB_CBELT = "embrapac/edge/cbelt",
   MQTT_SUB_METRICS = "embrapac/edge/aggregated-metrics",
+  DB_TIME_ZONE = "-03:00",
   DB_HOST,
   DB_PORT,
   DB_USER = "",
@@ -97,6 +98,10 @@ async function writeMqttIngestLog(topic, payload) {
       mcuTimestamp,
     ],
   );
+  console.log("Persisted MQTT ingest log record", {
+    topic,
+    mcuTimestamp,
+  });
 }
 
 async function writeCountRecord(payload) {
@@ -171,6 +176,48 @@ async function writeCountRecord(payload) {
   });
 }
 
+async function writeConveyorBeltStatus(payload) {
+  const rawMcuTimestamp = payload.timestamp;
+  // Considera somente 1 registro de esteira. Com escala do sistema isso precisa ser refatorado
+  const singletonConveyorBeltId = 1;
+  const commandMapping = {
+    START: "IN_PROGRESS",
+    STOP: "ON_HOLD",
+    EMERGENCY: "ON_FAILURE",
+  }
+  if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
+    throw new Error("Missing required field: timestamp");
+  }
+  //const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
+  const command = String(payload.command ?? "").trim().toUpperCase();
+  const mappedCommand = commandMapping[command];
+
+  if (!mappedCommand) {
+    throw new Error(`Unsupported conveyor belt status: ${payload.command}`);
+  }
+
+  await dbPool.execute(
+    `
+      INSERT INTO conveyorbelt (
+        id,
+        state
+      )
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE
+        state = VALUES(state)
+    `,
+    [
+      singletonConveyorBeltId,
+      mappedCommand,
+    ],
+  );
+  console.log("Persisted conveyor belt status record", {
+    singletonConveyorBeltId,
+    command,
+    persistedState: mappedCommand,
+    rawMcuTimestamp,
+  });
+}
 
 async function start() {
   const missingDbCredentials = [];
@@ -208,6 +255,7 @@ async function start() {
   });
 
   await dbPool.query("SELECT 1");
+  await dbPool.execute("SET time_zone = ?", [DB_TIME_ZONE]);
   console.log("Connected to MariaDB");
 
   const client = mqtt.connect(runtimeConfig.mqttBrokerUrl, {
@@ -236,12 +284,13 @@ async function start() {
       const payload = parsePayload(message);
       console.log(`Received message from topic ${topic}`);
       if (topic === MQTT_SUB_CBELT) {
-        console.log("Received CBELT status message from EDGE", payload);
+        console.log("Received CBELT status message from IHM", payload);
+        await writeConveyorBeltStatus(payload);
       } else if (topic === MQTT_SUB_COUNT) {
         console.log("Received count message from EDGE", payload);
         await writeCountRecord(payload);
       } else if (topic === MQTT_PUB_CBELT_STATUS) {
-        console.log("Received CBELT status update from IHM", payload);
+        console.log("Received CBELT status update from EDGE", payload);
       } else {
         console.log(`Received message from topic ${topic}, storing in database...`);
         await writeMqttIngestLog(topic, payload);

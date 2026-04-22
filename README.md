@@ -135,6 +135,19 @@ Estrutura no Docker Compose para rodar o **Mosquitto**, **InfluxDB**, **Telegraf
 └── img/                           ← Imagens usadas no README e documentação
 ```
 
+## Mensageria recebida e respectivos comandos
+
+### Ligar esteira remotamente
+
+**Tópico:** `embrapac/edge/cbelt`
+```json
+{
+  "command": "START",
+  "timestamp": epoch,
+  "source": "usuario"
+}
+```
+
 ## Teste via MQTT num tópico de exemplo
 
 Teste inicial do ambiente realizado no mesmo Raspberry Pi 5: publicação de dados no mosquitto para exibição no _dashboard_ do Grafana:
