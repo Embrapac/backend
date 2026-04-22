@@ -98,6 +98,10 @@ async function writeMqttIngestLog(topic, payload) {
       mcuTimestamp,
     ],
   );
+  console.log("Persisted MQTT ingest log record", {
+    topic,
+    mcuTimestamp,
+  });
 }
 
 async function writeCountRecord(payload) {
