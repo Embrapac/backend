@@ -230,10 +230,10 @@ async function writeConveyorBeltPhysicalStatus(payload) {
   const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
 
   if (physicalState === "NORMAL") {
-    if (!["ON", "OFF"].includes(physicalStatus)) {
+    if (!["START", "STOP"].includes(physicalStatus)) {
       throw new Error(`Unsupported conveyor belt physical status: ${payload.status}`);
     }
-    const persistedStatus = physicalStatus === "ON" ? "IN_PROGRESS" : "ON_HOLD";
+    const persistedStatus = physicalStatus === "START" ? "IN_PROGRESS" : "ON_HOLD";
 
     await dbPool.execute(
       `
@@ -254,6 +254,23 @@ async function writeConveyorBeltPhysicalStatus(payload) {
     });
   } else if (physicalState === "EMERGENCY") {
 
+    // Set state ON_FAILURE on conveyorbelt table
+    await dbPool.execute(
+      `
+        UPDATE conveyorbelt
+        SET state = 'ON_FAILURE'
+        WHERE id = ?
+      `,
+      [
+        singletonConveyorBeltId,
+      ],
+    );
+    console.log("Persisted conveyor belt physical status update to ON_FAILURE due to EMERGENCY state", {
+      singletonConveyorBeltId,
+      physicalStatus,
+      rawMcuTimestamp,
+    });
+
     // get active workshift to associate the event with
     const [workshiftRows] = await dbPool.execute(
       `
@@ -267,7 +284,7 @@ async function writeConveyorBeltPhysicalStatus(payload) {
     );    
     const workshiftId = workshiftRows.length > 0 ? workshiftRows[0].id : null;
     if (!workshiftId) {
-      console.warn("No active workshift found for conveyor belt emergency event", {
+      console.warn("No active workshift found to register conveyor belt emergency event", {
         mcuTimestamp,
       });
       return;
