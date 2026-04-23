@@ -233,7 +233,7 @@ async function writeConveyorBeltPhysicalStatus(payload) {
     await dbPool.execute(
       `
         UPDATE conveyorbelt
-        SET physical_status = ?
+        SET state = ?
         WHERE id = ?
       `,
       [
