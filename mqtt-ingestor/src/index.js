@@ -233,7 +233,7 @@ async function writeConveyorBeltPhysicalStatus(payload) {
     if (!["ON", "OFF"].includes(physicalStatus)) {
       throw new Error(`Unsupported conveyor belt physical status: ${payload.status}`);
     }
-    physicalStatus = physicalStatus === "ON" ? "IN_PROGRESS" : "ON_HOLD";
+    const persistedStatus = physicalStatus === "ON" ? "IN_PROGRESS" : "ON_HOLD";
 
     await dbPool.execute(
       `
@@ -242,13 +242,14 @@ async function writeConveyorBeltPhysicalStatus(payload) {
         WHERE id = ?
       `,
       [
-        physicalStatus,
+        persistedStatus,
         singletonConveyorBeltId,
       ],
     );
     console.log("Persisted conveyor belt physical status update", {
       singletonConveyorBeltId,
       physicalStatus,
+      persistedStatus,
       rawMcuTimestamp,
     });
   } else if (physicalState === "EMERGENCY") {
