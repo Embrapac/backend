@@ -230,6 +230,11 @@ async function writeConveyorBeltPhysicalStatus(payload) {
   const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
 
   if (physicalState === "NORMAL") {
+    if (!["ON", "OFF"].includes(physicalStatus)) {
+      throw new Error(`Unsupported conveyor belt physical status: ${payload.status}`);
+    }
+    physicalStatus = physicalStatus === "ON" ? "IN_PROGRESS" : "ON_HOLD";
+
     await dbPool.execute(
       `
         UPDATE conveyorbelt
