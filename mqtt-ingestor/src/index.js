@@ -219,6 +219,117 @@ async function writeConveyorBeltStatus(payload) {
   });
 }
 
+async function writeConveyorBeltPhysicalStatus(payload) {
+  const rawMcuTimestamp = payload.timestamp;
+  const singletonConveyorBeltId = 1;
+  if (rawMcuTimestamp === null || rawMcuTimestamp === undefined) {
+    throw new Error("Missing required field: timestamp");
+  }
+  const physicalStatus = String(payload.status ?? "").trim().toUpperCase();
+  const physicalState = String(payload.state ?? "").trim().toUpperCase();
+  const mcuTimestamp = toMysqlDatetime(rawMcuTimestamp);
+
+  if (physicalState === "NORMAL") {
+    if (!["START", "STOP"].includes(physicalStatus)) {
+      throw new Error(`Unsupported conveyor belt physical status: ${payload.status}`);
+    }
+    const persistedStatus = physicalStatus === "START" ? "IN_PROGRESS" : "ON_HOLD";
+
+    await dbPool.execute(
+      `
+        UPDATE conveyorbelt
+        SET state = ?
+        WHERE id = ?
+      `,
+      [
+        persistedStatus,
+        singletonConveyorBeltId,
+      ],
+    );
+    console.log("Persisted conveyor belt physical status update", {
+      singletonConveyorBeltId,
+      physicalStatus,
+      persistedStatus,
+      rawMcuTimestamp,
+    });
+  } else if (physicalState === "EMERGENCY") {
+
+    // Set state ON_FAILURE on conveyorbelt table
+    await dbPool.execute(
+      `
+        UPDATE conveyorbelt
+        SET state = 'ON_FAILURE'
+        WHERE id = ?
+      `,
+      [
+        singletonConveyorBeltId,
+      ],
+    );
+    console.log("Persisted conveyor belt physical status update to ON_FAILURE due to EMERGENCY state", {
+      singletonConveyorBeltId,
+      physicalStatus,
+      rawMcuTimestamp,
+    });
+
+    // get active workshift to associate the event with
+    const [workshiftRows] = await dbPool.execute(
+      `
+        SELECT id, start_time, end_time
+        FROM workshift
+        WHERE ? BETWEEN start_time AND end_time
+        ORDER BY start_time DESC
+        LIMIT 1
+      `,
+      [mcuTimestamp],
+    );    
+    const workshiftId = workshiftRows.length > 0 ? workshiftRows[0].id : null;
+    if (!workshiftId) {
+      console.warn("No active workshift found to register conveyor belt emergency event", {
+        mcuTimestamp,
+      });
+      return;
+    }
+
+    await dbPool.execute(
+      `
+        INSERT INTO event (
+          occurrence_time, 
+          description, 
+          code, 
+          message, 
+          severity, 
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        mcuTimestamp,
+        "Conveyor belt emergency button activated",
+        1,
+        "Emergency button pressed on conveyor belt",
+        "HIGH",
+        "ACTIVE"
+      ]
+    );
+    console.log("Persisted Emergency event at ", {
+      mcuTimestamp,
+    }); 
+  
+    // insert into workshift/event association table
+    await dbPool.execute(
+      `
+        INSERT INTO workshift_event (event_id, workshift_id)
+        SELECT LAST_INSERT_ID(), ?
+      `,
+      [workshiftId],
+    );
+    console.log("Associated conveyor belt emergency event with active workshift", {
+      singletonConveyorBeltId,
+      mcuTimestamp,
+      workshiftId,
+    });
+  }
+}
+
 async function start() {
   const missingDbCredentials = [];
   if (!DB_USER) missingDbCredentials.push("DB_USER");
@@ -291,6 +402,7 @@ async function start() {
         await writeCountRecord(payload);
       } else if (topic === MQTT_PUB_CBELT_STATUS) {
         console.log("Received CBELT status update from EDGE", payload);
+        await writeConveyorBeltPhysicalStatus(payload);
       } else {
         console.log(`Received message from topic ${topic}, storing in database...`);
         await writeMqttIngestLog(topic, payload);

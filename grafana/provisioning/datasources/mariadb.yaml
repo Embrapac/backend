@@ -1,0 +1,16 @@
+# grafana/provisioning/datasources/mariadb.yaml
+apiVersion: 1
+
+datasources:
+  - name: MariaDB
+    type: mysql
+    url: mariadb:3306
+    user: grafana_reader
+    jsonData:
+      database: embrapac
+      maxOpenConns: 10
+      maxIdleConns: 10
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: senha_segura
+    editable: true
