@@ -19,6 +19,109 @@
   "panels": [
     {
       "datasource": {
+        "type": "mysql",
+        "uid": "P2ABB19EC46770D68"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "IN_PROGRESS": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Em Execução"
+                },
+                "ON_FAILURE": {
+                  "color": "red",
+                  "index": 2,
+                  "text": "Parada (EMERGÊNCIA)"
+                },
+                "ON_HOLD": {
+                  "color": "super-light-green",
+                  "index": 1,
+                  "text": "Parada"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 20,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "embrapac",
+          "datasource": {
+            "type": "mysql",
+            "uid": "P2ABB19EC46770D68"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT state\nFROM embrapac.conveyorbelt\nORDER BY updated_at DESC\nLIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Status da Esteira",
+      "type": "stat"
+    },
+    {
+      "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
       },
@@ -44,7 +147,7 @@
         "h": 4,
         "w": 5,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 5,
       "options": {
@@ -107,7 +210,7 @@
         "h": 4,
         "w": 5,
         "x": 5,
-        "y": 0
+        "y": 8
       },
       "id": 4,
       "options": {
@@ -170,7 +273,7 @@
         "h": 4,
         "w": 5,
         "x": 10,
-        "y": 0
+        "y": 8
       },
       "id": 3,
       "options": {
@@ -234,7 +337,7 @@
         "h": 4,
         "w": 5,
         "x": 15,
-        "y": 0
+        "y": 8
       },
       "id": 2,
       "options": {
@@ -320,7 +423,7 @@
         "h": 7,
         "w": 5,
         "x": 0,
-        "y": 4
+        "y": 12
       },
       "id": 1,
       "options": {
@@ -386,7 +489,7 @@
         "h": 7,
         "w": 5,
         "x": 5,
-        "y": 4
+        "y": 12
       },
       "id": 6,
       "options": {
@@ -452,7 +555,7 @@
         "h": 7,
         "w": 5,
         "x": 10,
-        "y": 4
+        "y": 12
       },
       "id": 8,
       "options": {
@@ -518,7 +621,7 @@
         "h": 7,
         "w": 5,
         "x": 15,
-        "y": 4
+        "y": 12
       },
       "id": 7,
       "options": {
@@ -551,108 +654,6 @@
       ],
       "title": "Precisão de Detecção: Caixa Pequena",
       "type": "gauge"
-    },
-    {
-      "datasource": {
-        "uid": "ffjw7cgezgyyod"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "IN_PROGRESS": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "Em Execução"
-                },
-                "ON_FAILURE": {
-                  "color": "red",
-                  "index": 2,
-                  "text": "Parada (EMERGÊNCIA)"
-                },
-                "ON_HOLD": {
-                  "color": "super-light-green",
-                  "index": 1,
-                  "text": "Parada"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 11
-      },
-      "id": 9,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.4.1",
-      "targets": [
-        {
-          "dataset": "embrapac",
-          "datasource": {
-            "type": "mysql",
-            "uid": "ffjw7cgezgyyod"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  NOW() AS time,\n  state\nFROM embrapac.conveyorbelt\nORDER BY id DESC\nLIMIT 1",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Status da Esteira",
-      "type": "stat"
     }
   ],
   "preload": false,
@@ -674,6 +675,6 @@
   "timezone": "browser",
   "title": "Embrapac KPIs",
   "uid": "embrapac-kpis-v1",
-  "version": 14,
+  "version": 17,
   "weekStart": ""
 }
